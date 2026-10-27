@@ -25,3 +25,5 @@ dist/
 *.user
 Thumbs.db
 __pycache__/
+
+!docs/images/

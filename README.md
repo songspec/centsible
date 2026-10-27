@@ -1,85 +1,139 @@
+<div align="center">
+
 # Centsible
 
-Reads how many cents a song is pitched away from 12-TET A = 440 Hz (range ±50 ¢, wrapped), so two songs can be matched for a mashup.
+**How far off A440 is this song, what key is it in, how fast is it, and what changes when the beat switches?**
 
+![Windows](https://img.shields.io/badge/Windows-VST3%20%2B%20Standalone-7c5cff?style=flat-square)
+![C++20](https://img.shields.io/badge/C%2B%2B-20-b99cff?style=flat-square)
+![JUCE](https://img.shields.io/badge/JUCE-8.0.4-ece6f5?style=flat-square&labelColor=171322)
+![version](https://img.shields.io/badge/version-1.3.0-b99cff?style=flat-square)
+![reports only](https://img.shields.io/badge/audio-never%20touched-4c9f70?style=flat-square)
+
+<img src="docs/images/readout.png" alt="The Centsible plugin showing +5 cents" width="300"> &nbsp;&nbsp; <img src="docs/images/beatswitch-result.png" alt="Beatswitch: first half and second half side by side" width="300">
+
+</div>
+
+---
+
+## What it does
+
+Centsible listens to a track and reports, without ever changing the audio (the plugin's output is bit-identical to its input):
+
+| | |
+|---|---|
+| **Tuning** | cents away from 12-TET A = 440 Hz, as a big number rounded to the nearest 5 ¢ and the exact value with its ± interval beside it. It tells you what to shift by to fix it, and also the other reading from the semitone below or above. |
+| **Key** | the key with its Camelot code, how sure it is, the runner-up, and which of the **seven modes** (Ionian, Dorian, Phrygian, Lydian, Mixolydian, Aeolian, Locrian) it is. |
+| **Tempo** | BPM in the 80 to 160 range DJs and producers use, with the half or double reading as the alternative. |
+| **Beatswitch** | where a track changes (new beat, new key, new tempo) and what each half is: detune, key and tempo, side by side. |
+| **Match** | drop two files and it tells you how to shift the second one to sit on the first. |
+
+Drop an audio file on the plugin window to analyse it, or just play audio through it.
+
+---
+
+## Beatswitch: two halves, two answers
+
+Some tracks change halfway. Press the **beatswitch** button (bottom right) and answer three questions:
+
+<table>
+<tr>
+<td width="50%" valign="top">
+
+1. **When does the beat switch?** Type a time (`1:25`) or a bar (`33|1`). Or press **record**, play the song in your DAW, and press **mark switch** at the moment it switches.
+2. **First half BPM** and **Second half BPM**: optional. If you type both, it also tells you whether the pitch moved with the tempo (a **varispeed**) or not (a **time-stretch**).
+3. **`[ ] add a third part`**: for the rare second switch. Tick it and two more boxes appear.
+
+Press **analyse**. You get the first half and the second half **side by side**, each with its detune, key (and mode) and tempo, then what changed between them and what to shift by to match them.
+
+**tempo curve** follows detune and tempo over the whole song instead, finds the switches itself, and **use as switches** turns them into the boxes above.
+
+</td>
+<td width="50%">
+
+<img src="docs/images/beatswitch-form.png" alt="The Beatswitch form" width="100%">
+
+</td>
+</tr>
+</table>
+
+<details>
+<summary><b>More pictures</b>: three parts, and the tempo curve</summary>
+<br>
+<img src="docs/images/beatswitch-three-parts.png" alt="Three parts" width="280"> &nbsp; <img src="docs/images/tempo-curve.png" alt="Tempo curve" width="280">
+</details>
+
+> [!NOTE]
+> The same analysis runs on the command line (`centsible_cli --sections "1:25" track.flac`). Details in [BEATSWITCH.md](BEATSWITCH.md).
+
+---
+
+## Install
+
+1. Download **`Centsible-Setup-1.3.0.exe`** from the [latest release](../../releases/latest) and run it. It installs the VST3, and optionally the Standalone app and the command line tool.
+2. Close your DAW first (Windows cannot replace a plugin that is loaded), then rescan plugins.
+
+> [!WARNING]
+> The installer is not code-signed yet, so Windows shows "unknown publisher" the first time.
+
+---
+
+## How accurate is it? (honest numbers)
+
+Measured on a catalog of 369 real songs, mostly dense modern mixes. Real songs have no ground truth for tuning, so the test shifts every song by exact amounts and checks that the reading moves by exactly that.
+
+| | result |
+|---|---|
+| Synthetic songs of known tuning | max error **0.17 ¢**, mean 0.017 ¢ (1801 of 1811 cases within the target) |
+| Real songs, shifted by exact amounts | **88 %** within 0.5 ¢; the interval the plugin reports contains the error in 96 % of cases |
+| Where it fails | a few songs read a wrong tuning **13 to 15 ¢** away, because the same notes can be explained by another partial pattern |
+| Key (songs it had never seen) | **45 %** exact, **72 %** right scale; the probability it shows is well calibrated |
+| Tempo | **98 %** within 1 % of the tracker's BPM |
+
+Full tables, what was tried and what failed: [REPORT.md](REPORT.md), section 8.
+
+---
+
+## Command line
+
+```bat
+centsible_cli track.flac                                  :: tuning, key (with modes), tempo
+centsible_cli --csv results.csv folder\*.flac             :: a whole folder into one table
+centsible_cli --match a.flac b.flac                       :: how to shift b to sit on a
+centsible_cli --sections "1:25" track.flac                :: Beatswitch: the two halves
+centsible_cli --automation track.flac                     :: detune over time against tempo over time
 ```
-−12.0 ¢ ± 0.2     A4 = 436.9 Hz
-(= +88.0 ¢ from one semitone down)
-shift +12.0 ¢ to fix
-```
 
-* **One analysis core** (`core/`, C++20, no JUCE, no allocation after `prepare`) is shared by the plugin, the command line tool and every test.
-* The plugin never touches the audio (read-only, bit-identical pass-through, checked by `ctest`); the audio thread only copies into a lock-free FIFO.
-* Formats: **VST3** and **Standalone** (JUCE 8.0.4, fetched automatically).
+---
 
-**Install:** run `dist\<version>\Centsible-Setup-<version>.exe` (VST3, optional Standalone app and command line tool; v1.1.0's installer is still `dist\Centsible-Setup.exe`). Changes per version: `CHANGELOG.md`.
+## Build from source
 
-**What is inside one track?** (v1.3) `centsible_cli --sections "0:45, 1:30"` measures detune, key and tempo of every part on its own; `--automation` follows detune and tempo over time and says whether a moving tempo is a varispeed or a time-stretch. In the plugin, the **beatswitch** button (bottom right) opens the same thing over the plate: drop one file or record what your DAW plays (with its tempo), type the times, press analyse. See `BEATSWITCH.md`.
-
-## Build on Windows
-
-Needs Visual Studio 2022 (Desktop development with C++), CMake ≥ 3.22 and Git (JUCE is downloaded on first configure). Use a **short build directory**:
-JUCE's paths otherwise exceed MAX_PATH.
+Windows, Visual Studio 2022, CMake 3.22 or newer. JUCE is downloaded on first configure. Use a **short build directory** (JUCE's paths are long).
 
 ```bat
 cmake -S . -B C:\cb -G "Visual Studio 17 2022" -A x64
-cmake --build C:\cb --config Release -j
+cmake --build C:\cb --config Release --parallel 8
+ctest --test-dir C:\cb -C Release -R "passthrough|robustness|features|beatswitch"
 ```
 
-Outputs
+The VST3 is in `C:\cb\plugin\Centsible_artefacts\Release\VST3\`. Everything else (every test, the research tools, design notes) is in the [developer guide](docs/DEVELOPMENT.md).
 
-| what | where |
+---
+
+## What is where
+
+| folder | contents |
 |---|---|
-| VST3 | `C:\cb\plugin\Centsible_artefacts\Release\VST3\Centsible.vst3` |
-| Standalone | `C:\cb\plugin\Centsible_artefacts\Release\Standalone\Centsible.exe` |
-| command line analyzer | `C:\cb\cli\centsible_cli_artefacts\Release\centsible_cli.exe` |
+| `core/` | the analysis library, C++20, no JUCE: tuning, key, tempo, Beatswitch (`centsible/sections.h`) |
+| `plugin/` | the VST3 / Standalone: processor, editor, the Beatswitch panel |
+| `cli/` | `centsible_cli` |
+| `tests/` | synthetic suite, real-audio shift suite, plugin end-to-end test, research tools |
+| `tools/` | Python scripts for evaluation and training |
+| `installer/` | the Inno Setup script |
+| `docs/` | developer guide and screenshots |
 
-Install the VST3: close the DAW, copy the `Centsible.vst3` folder to `C:\Program Files\Common Files\VST3\` (or run `install-vst3.ps1`, which asks for admin rights), rescan plugins.
+Documents: [CHANGELOG](CHANGELOG.md) · [BEATSWITCH](BEATSWITCH.md) · [REPORT](REPORT.md) (measurements) · [PLAN](PLAN.md) · [PROGRESS](PROGRESS.md)
 
-### Tests
+---
 
-```bat
-ctest --test-dir C:\cb -C Release --output-on-failure            :: passthrough (bit-identical) + synthetic suite
-ctest --test-dir C:\cb -C Release -L real --output-on-failure    :: real audio from testdata\real (slow)
-```
-
-* `centsible_tests` – synthetic suite: ±200 ¢ sweep in 0.5 ¢ steps, instrument/condition zoo, synthetic songs, genuine/false second tunings, song switches, the +88 regression.
-  Writes `synthetic_results.csv` / `synthetic_summary.md` (every case with expected, detected, error, CI, pass/fail) to `C:\cb\test-results`.
-* `centsible_real_tests <audio dir> <results dir> [maxSeconds] [filter] [shifts…]` – every file is resampled by exact known shifts (Kaiser sinc) and the detected *difference* must equal the shift.
-* `tools\compare_estimators.py <audio dir> <results dir>` – the same audio through Centsible, `librosa.estimate_tuning` and an essentia-style reference.
-* `centsible_robustness_test` – the real processor under host-style abuse: every sample rate / block size / layout, repeated prepare, reset mid-stream, zero-length blocks, NaN / Inf / clipping input. Output must stay bit-identical.
-* `centsible_features_tests` – key, tempo and match advice on synthetic songs of known key and tempo (each pitched by a known detune).
-* `centsible_beatswitch_tests` – Beatswitch on synthetic songs of known detune, key and tempo: timestamp parsing, the tempo map, sections (two songs joined at a boundary), tempo automation (varispeed ramp, time-stretch, constant, pitch step, tempo step, a beat switch where everything changes, manual tempo points), key probabilities / Camelot, progress and cancel. `centsible_beatswitch_tests quick` skips the long automation cases.
-* `beatswitch_eval [--varispeed r0 r1 tA tB | --splice fileB tA tB] <files>` – Beatswitch on real songs: untouched (how often does it suggest a boundary that is not there?), after a real varispeed ramp (`tests/gen/varispeed.h`), or spliced from two songs. `curve_probe` prints the windowed detune / tempo curves of the synthetic songs.
-* `centsible_shift <in> <out.wav> <cents>` – writes an audio file resampled by an exact shift (used by the comparison script).
-* Key / tempo research (not in ctest): `key_frames`, `key_dump`, `tempo_dump` dump features; `tools/key_eval.py`, `key_train.py`, `key_invariance.py`, `key_report.py`, `bpm_report.py` evaluate and train against `testdata/key_labels.csv` (built by `tools/build_key_labels.py` from the tracker export `testdata/tracker_songs.csv`).
-* Developer tools, not in ctest: `probe_synth` (reading vs truth on a few controlled signals), `hist_dump <wav>` (the evidence histogram of one file and the fitted model).
-* `centsible_ui_snapshot <out.png> <cents | audio file> <seconds>` – renders the real editor offscreen (real processor, real analysis thread).
-
-### Design notes
-
-* The analysis runs on a thread the host or plugin creates, with a stack of unknown size, so the core keeps its working set small (`static_assert` on the size of a fit) and `centsible_tests` is linked with a 256 KB stack reserve: a stack-hungry change crashes the test, not a DAW.
-* One algorithm, one implementation (`core/src/spectral_likelihood.h`); the plugin, the CLI and every test call the same `centsible::Analyzer` / `analyzeTrack`.
-
-### Command line
-
-```bat
-centsible_cli track.flac other.mp3                 :: one block per file
-centsible_cli --csv results.csv folder\*.flac      :: batch, one row per file (cents, ci, A4 Hz, confidence, locked, second tuning, key, bpm)
-centsible_cli --match a.flac b.flac                :: how to shift b to sit on a
-```
-
-#### Beatswitch (what changes inside one track?)
-
-```bat
-centsible_cli --sections "0:45, 1:30.5" track.flac               :: A | B | C: detune, key and tempo of every section on its own, and the differences
-centsible_cli --sections "17|1, 33|1" --bpm 128 track.flac       :: the same with bar|beat times (1-based, needs a tempo)
-centsible_cli --automation track.flac                            :: detune over time against tempo over time: varispeed or time-stretch?
-centsible_cli --automation --tempo-points "0=120, 0:20=120, 1:20=140" track.flac   :: tempo from points you give (add --tempo-step for steps)
-centsible_cli --automation --reference-bpm 120 --boundaries "0:50" --curve-csv curve.csv track.flac
-```
-
-* Sections drop 0.75 s on each side of an inner boundary (the transition) and refuse sections shorter than 8 s instead of guessing.
-* Automation measures the detune in overlapping 3 s windows (each with a bootstrap interval) and the tempo with a windowed tempogram + Viterbi track (or takes your tempo points). With `x = 1200 log2 (bpm / bpm_ref)`, a varispeed has detune = a + x and a time-stretch has detune = a; both are fitted as circular regressions and the tighter one wins. For a varispeed it reports the tempo at which the track sits on A440 (0 cents).
-* Suggested boundaries are discontinuities only (a ramp or a kink is not a boundary): detune steps (checked on the pooled evidence of the plateaus either side) and tempo steps.
-* Library entry points: `centsible/sections.h` (`parseTimestamp`, `TempoMap`, `analyzeSections`, `analyzeTempoAutomation`, both with progress + cancel).
+<div align="center"><sub>Centsible reports; it never changes your audio.</sub></div>
