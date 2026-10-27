@@ -132,7 +132,7 @@ The VST3 is in `C:\cb\plugin\Centsible_artefacts\Release\VST3\`. Everything else
 | `installer/` | the Inno Setup script |
 | `docs/` | developer guide and screenshots |
 
-Documents: [CHANGELOG](CHANGELOG.md) · [BEATSWITCH](BEATSWITCH.md) · [REPORT](REPORT.md) (measurements) · [PLAN](PLAN.md) · [PROGRESS](PROGRESS.md)
+Documents: [CHANGELOG](CHANGELOG.md) · [BEATSWITCH](BEATSWITCH.md) · [REPORT](REPORT.md) (measurements)
 
 ---
 
