@@ -8,6 +8,7 @@
 ![C++20](https://img.shields.io/badge/C%2B%2B-20-b99cff?style=flat-square)
 ![JUCE](https://img.shields.io/badge/JUCE-8.0.4-ece6f5?style=flat-square&labelColor=171322)
 ![version](https://img.shields.io/badge/version-1.3.0-b99cff?style=flat-square)
+![license](https://img.shields.io/badge/license-AGPL--3.0-7c5cff?style=flat-square)
 ![reports only](https://img.shields.io/badge/audio-never%20touched-4c9f70?style=flat-square)
 
 <img src="docs/images/readout.png" alt="The Centsible plugin showing +5 cents" width="300"> &nbsp;&nbsp; <img src="docs/images/beatswitch-result.png" alt="Beatswitch: first half and second half side by side" width="300">
@@ -133,6 +134,27 @@ The VST3 is in `C:\cb\plugin\Centsible_artefacts\Release\VST3\`. Everything else
 | `docs/` | developer guide and screenshots |
 
 Documents: [CHANGELOG](CHANGELOG.md) · [BEATSWITCH](BEATSWITCH.md) · [REPORT](REPORT.md) (measurements)
+
+---
+
+## License
+
+Centsible is free software under the **[GNU Affero General Public License v3.0 or later](LICENSE)** (AGPL-3.0+). You may use, study, change and share it, and if you distribute it (or run a modified version as a network service) you must offer the source under the same license.
+
+The AGPL is required because Centsible is built on [JUCE](https://juce.com), which is dual-licensed AGPL-3.0 / commercial. Everything it bundles is listed with its license in **[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)** (texts in [`licenses/`](licenses/)):
+
+| | license |
+|---|---|
+| Centsible (this repository) | AGPL-3.0-or-later |
+| JUCE 8.0.4 | AGPL-3.0 (or commercial) |
+| VST3 SDK | GPL-3.0 (alternative to the Steinberg license) |
+| FLAC, Ogg Vorbis | BSD |
+| zlib, libpng, IJG libjpeg | zlib / libpng / IJG |
+| HarfBuzz | MIT |
+| SheenBidi | Apache-2.0 |
+| Source Sans Pro (typeface) | SIL Open Font License 1.1 |
+
+*VST is a trademark of Steinberg Media Technologies GmbH.*
 
 ---
 

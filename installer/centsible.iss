@@ -37,6 +37,9 @@ Source: "..\dist\{#AppVersion}\Centsible-Standalone.exe"; DestDir: "{app}"; Dest
 Source: "..\dist\{#AppVersion}\centsible_cli.exe"; DestDir: "{app}"; Components: cli; Flags: ignoreversion
 Source: "..\README.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\BEATSWITCH.md"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\THIRD_PARTY_NOTICES.md"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\licenses\*"; DestDir: "{app}\licenses"; Flags: ignoreversion recursesubdirs
 
 [Icons]
 Name: "{group}\Centsible"; Filename: "{app}\Centsible.exe"; Components: standalone
