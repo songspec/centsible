@@ -1,0 +1,4 @@
+juce_add_console_app(centsible_cli PRODUCT_NAME "centsible_cli")
+target_sources(centsible_cli PRIVATE main.cpp)
+target_compile_definitions(centsible_cli PRIVATE JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0 JUCE_USE_MP3AUDIOFORMAT=1 _CRT_SECURE_NO_WARNINGS)
+target_link_libraries(centsible_cli PRIVATE centsible_core juce::juce_audio_formats juce::juce_recommended_config_flags)

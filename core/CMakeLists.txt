@@ -1,0 +1,7 @@
+add_library(centsible_core STATIC src/analyzer.cpp src/track_features.cpp src/sections.cpp src/tempo_automation.cpp)
+target_include_directories(centsible_core PUBLIC include PRIVATE src)
+target_compile_features(centsible_core PUBLIC cxx_std_20)
+if(MSVC)
+    target_compile_options(centsible_core PRIVATE /O2 /W3)
+    target_compile_definitions(centsible_core PRIVATE _CRT_SECURE_NO_WARNINGS)
+endif()

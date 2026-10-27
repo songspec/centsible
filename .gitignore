@@ -1,0 +1,27 @@
+# build output
+build/
+cmake-build-*/
+*.obj
+*.pdb
+*.ilk
+
+# your music and everything generated from it stays on this PC (testdata/real is 7.8 GB of audio)
+testdata/real/
+results/
+test-tones/
+reference-pack/
+screenshots/
+archive/
+
+# installers and binaries are release artefacts, not source
+dist/
+*.exe
+*.vst3
+*.zip
+
+# editor / OS
+.vs/
+.vscode/
+*.user
+Thumbs.db
+__pycache__/
