@@ -136,4 +136,12 @@ Documents: [CHANGELOG](CHANGELOG.md) · [BEATSWITCH](BEATSWITCH.md) · [REPORT](
 
 ---
 
+## Disclaimer
+
+About **90 % of this software was written with [Claude Code](https://claude.com/claude-code)**, Anthropic's AI coding assistant. I can read and write code myself, and I review almost everything it writes, but I have not read every single line, and AI-written code can contain mistakes I missed.
+
+Please treat the numbers above as measurements on my own song collection, not guarantees, and test the plugin yourself before relying on it. If you find a bug, [open an issue](../../issues).
+
+---
+
 <div align="center"><sub>Centsible reports; it never changes your audio.</sub></div>
