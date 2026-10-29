@@ -1,6 +1,10 @@
 ; Centsible installer (Inno Setup 6). Build: ISCC.exe installer\centsible.iss  ->  dist\<version>\Centsible-Setup-<version>.exe  (the files it packs are in dist\<version>\)
 #define AppName "Centsible"
-#define AppVersion "1.3.0"
+; the release workflow passes /DAppVersion=<version from CMakeLists.txt>; the
+; fallback is only for building the installer by hand
+#ifndef AppVersion
+  #define AppVersion "1.3.0"
+#endif
 
 [Setup]
 AppId={{6B0E2B1C-5C1B-4B52-9D3E-C3A7510C0A11}

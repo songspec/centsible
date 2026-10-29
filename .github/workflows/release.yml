@@ -1,0 +1,138 @@
+name: Release
+
+# Builds the Windows installer, tests it, tags the commit and publishes it to
+# mainstage (https://mainstage.songspec.org/centsible). Manual only: run it from
+# the Actions tab or with `gh workflow run release.yml`. See AGENTS.md, "Releasing".
+#
+# The version is the one in CMakeLists.txt (project(Centsible VERSION x.y.z)) and
+# the release notes are docs/release-notes-<version>.md.
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "live = publish and make it the download everyone gets, publish = archive only, draft = finish in the mainstage ui"
+        type: choice
+        options: [live, publish, draft]
+        default: live
+      existing:
+        description: "fail = stop if this version is already published, fill = only add files that version is missing"
+        type: choice
+        options: [fail, fill]
+        default: fail
+      dry_run:
+        description: "Build and test everything but publish nothing and push no tag"
+        type: boolean
+        default: false
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write   # to push the release tag
+
+env:
+  MAINSTAGE_URL: https://mainstage.songspec.org
+
+jobs:
+  release:
+    runs-on: windows-2022
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Version and release notes
+        id: meta
+        run: |
+          VERSION=$(grep -oE 'project\(Centsible VERSION [0-9]+\.[0-9]+\.[0-9]+' CMakeLists.txt | awk '{print $3}')
+          if [ -z "$VERSION" ]; then echo "::error::No version found in CMakeLists.txt"; exit 1; fi
+          NOTES="docs/release-notes-$VERSION.md"
+          if [ "${{ inputs.existing }}" = "fail" ] && [ ! -f "$NOTES" ]; then
+            echo "::error::$NOTES is missing. Write the release notes for $VERSION first."
+            exit 1
+          fi
+          TAG="v$VERSION"
+          if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            TAGGED=$(git rev-list -n 1 "$TAG")
+            if [ "$TAGGED" != "$GITHUB_SHA" ] && [ "${{ inputs.existing }}" = "fail" ]; then
+              echo "::error::$TAG already exists on ${TAGGED::7}, not on this commit. Bump the version in CMakeLists.txt."
+              exit 1
+            fi
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "notes=$NOTES" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Releasing Centsible $VERSION from ${GITHUB_SHA::7}"
+
+      - name: Check mainstage before building
+        env:
+          MAINSTAGE_RELEASE_TOKEN: ${{ secrets.MAINSTAGE_RELEASE_TOKEN }}
+        run: |
+          NOTES_ARG=()
+          if [ -f "${{ steps.meta.outputs.notes }}" ]; then NOTES_ARG=(--notes-file "${{ steps.meta.outputs.notes }}"); fi
+          node .github/scripts/mainstage-release.mjs --preflight \
+            --project centsible --version "${{ steps.meta.outputs.version }}" \
+            --existing "${{ inputs.existing }}" "${NOTES_ARG[@]}"
+
+      - name: Build (VST3, standalone, command line tool)
+        # JUCE's paths are long, a short build directory keeps them under MAX_PATH
+        run: |
+          cmake -S . -B C:/cb -G "Visual Studio 17 2022" -A x64
+          cmake --build C:/cb --config Release --parallel
+
+      - name: Test
+        run: ctest --test-dir C:/cb -C Release -R "passthrough|robustness|features|beatswitch" --output-on-failure
+
+      - name: Installer
+        run: |
+          VERSION="${{ steps.meta.outputs.version }}"
+          STAGE="dist/$VERSION"
+          mkdir -p "$STAGE"
+          cp -r "C:/cb/plugin/Centsible_artefacts/Release/VST3/Centsible.vst3" "$STAGE/"
+          cp "C:/cb/plugin/Centsible_artefacts/Release/Standalone/Centsible.exe" "$STAGE/Centsible-Standalone.exe"
+          cp "C:/cb/cli/centsible_cli_artefacts/Release/centsible_cli.exe" "$STAGE/"
+          ISCC="/c/Program Files (x86)/Inno Setup 6/ISCC.exe"
+          if [ ! -f "$ISCC" ]; then choco install innosetup -y --no-progress; fi
+          "$ISCC" "//DAppVersion=$VERSION" installer/centsible.iss
+          ls -la "$STAGE"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Centsible-Setup-${{ steps.meta.outputs.version }}
+          path: dist/${{ steps.meta.outputs.version }}/Centsible-Setup-${{ steps.meta.outputs.version }}.exe
+
+      - name: Tag
+        if: ${{ !inputs.dry_run && inputs.mode != 'draft' }}
+        run: |
+          TAG="${{ steps.meta.outputs.tag }}"
+          if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            echo "$TAG already exists"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git tag -a "$TAG" -m "Centsible ${{ steps.meta.outputs.version }}" "$GITHUB_SHA"
+            git push origin "$TAG"
+          fi
+
+      - name: Publish to mainstage
+        env:
+          MAINSTAGE_RELEASE_TOKEN: ${{ secrets.MAINSTAGE_RELEASE_TOKEN }}
+        run: |
+          VERSION="${{ steps.meta.outputs.version }}"
+          # drafts point at the exact commit, published versions at their tag
+          REF="${{ steps.meta.outputs.tag }}"
+          if [ "${{ inputs.mode }}" = "draft" ]; then REF="$GITHUB_SHA"; fi
+          ARGS=(--project centsible --version "$VERSION" --git-ref "$REF"
+                --mode "${{ inputs.mode }}" --existing "${{ inputs.existing }}"
+                --file "dist/$VERSION/Centsible-Setup-$VERSION.exe=windows-installer")
+          if [ -f "${{ steps.meta.outputs.notes }}" ]; then ARGS+=(--notes-file "${{ steps.meta.outputs.notes }}"); fi
+          if [ "${{ inputs.dry_run }}" = "true" ]; then ARGS+=(--dry-run); fi
+          node .github/scripts/mainstage-release.mjs "${ARGS[@]}"

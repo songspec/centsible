@@ -30,6 +30,8 @@ __pycache__/
 
 # working notes and personal data: kept on the author machine, not in the repo
 CLAUDE.md
+# shared agent instructions (release steps), pointing at AGENTS.md
+!.claude/CLAUDE.md
 PLAN.md
 PROGRESS.md
 DIAGNOSIS.md

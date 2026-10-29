@@ -107,6 +107,12 @@ centsible_cli --automation track.flac                     :: detune over time ag
 
 ---
 
+## Releases
+
+Downloads are published on [mainstage](https://mainstage.songspec.org/centsible) by the manual `Release` workflow. [AGENTS.md](AGENTS.md#releasing) has the steps, written so a person or a coding agent can follow them.
+
+---
+
 ## Build from source
 
 Windows, Visual Studio 2022, CMake 3.22 or newer. JUCE is downloaded on first configure. Use a **short build directory** (JUCE's paths are long).
